@@ -20815,6 +20815,11 @@ export function heartbeatService(
                   : row;
               })
           : null;
+      // Server-owned origin, not a model/client tool-permission claim. Personal
+      // assessments and drafts must never inherit the coordinator's shell tools.
+      if (issueContext && ["personal_assessment", "personal_draft"].includes(issueContext.originKind)) {
+        context.personalTodoNoTools = true;
+      }
       let issueAssigneeOverrides =
         issueContext && issueContext.assigneeAgentId === agent.id
           ? parseIssueAssigneeAdapterOverrides(

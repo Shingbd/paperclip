@@ -34,6 +34,7 @@ import { ProjectDetail } from "./pages/ProjectDetail";
 import { ProjectWorkspaceDetail } from "./pages/ProjectWorkspaceDetail";
 import { Workspaces } from "./pages/Workspaces";
 import { Issues } from "./pages/Issues";
+import { PersonalWorkspace } from "./pages/PersonalWorkspace";
 import { Search } from "./pages/Search";
 import { IssueDetail } from "./pages/IssueDetail";
 import { AgentChats } from "./pages/AgentChats";
@@ -156,6 +157,7 @@ function boardRoutes(streamlinedUiEnabled: boolean, combinedInboxTasksEnabled: b
     <>
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
+      <Route path="personal" element={<PersonalWorkspace />} />
       <Route path="dashboard/live" element={<DashboardLive />} />
       <Route
         path="timeline"
@@ -851,6 +853,7 @@ export function App() {
               <Route path="audit/*" element={<UnprefixedBoardRedirect />} />
               <Route path="activity" element={<UnprefixedBoardRedirect />} />
               <Route path="activity/*" element={<UnprefixedBoardRedirect />} />
+              <Route path="personal" element={<UnprefixedBoardRedirect />} />
               <Route path="runs" element={<UnprefixedBoardRedirect />} />
               <Route path="costs" element={<UnprefixedBoardRedirect />} />
               <Route path="budgets" element={<UnprefixedBoardRedirect />} />

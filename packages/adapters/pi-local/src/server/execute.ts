@@ -225,6 +225,7 @@ async function readSavedSessionCwd(input: {
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
   const providerStop = createProviderStoppedBoundary(ctx.onProviderStopped);
   const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
+  const personalTodoNoTools = context.personalTodoNoTools === true;
   const executionTarget = readAdapterExecutionTarget({
     executionTarget: ctx.executionTarget,
     legacyRemoteExecution: ctx.executionTransport?.remoteExecution,
@@ -271,7 +272,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const piSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
   const desiredPiSkillNames = resolveLegacyPaperclipDesiredSkillNames(config, piSkillEntries);
-  if (!executionTargetIsRemote) {
+  if (!executionTargetIsRemote && !personalTodoNoTools) {
     await ensurePiSkillsInjected(onLog, piSkillEntries, desiredPiSkillNames);
   }
 
@@ -405,6 +406,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     }
 
     const extraArgs = (() => {
+      if (personalTodoNoTools) return ["--no-tools", "--no-extensions", "--no-skills", "--no-context-files", "--no-prompt-templates", "--no-approve"];
       const fromExtraArgs = asStringArray(config.extraArgs);
       if (fromExtraArgs.length > 0) return fromExtraArgs;
       return asStringArray(config.args);
@@ -650,9 +652,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       if (modelId) args.push("--model", modelId);
       if (thinking) args.push("--thinking", thinking);
 
-      args.push("--tools", "read,bash,edit,write,grep,find,ls");
+      if (!personalTodoNoTools) args.push("--tools", "read,bash,edit,write,grep,find,ls");
       args.push("--session", sessionFile);
-      args.push("--skill", remoteSkillsDir ?? PI_AGENT_SKILLS_DIR);
+      if (!personalTodoNoTools) args.push("--skill", remoteSkillsDir ?? PI_AGENT_SKILLS_DIR);
 
       if (extraArgs.length > 0) args.push(...extraArgs);
 

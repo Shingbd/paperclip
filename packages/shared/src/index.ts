@@ -2833,3 +2833,4 @@ export { isAppAggregator, aggregatorManagementUrl, aggregatorAppsSyncSchema, agg
 
 export * from "./connection-instructions.js";
 export * from "./customer-success.js";
+export * from "./personal-workspace.js";

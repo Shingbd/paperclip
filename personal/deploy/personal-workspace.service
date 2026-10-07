@@ -1,0 +1,33 @@
+[Unit]
+Description=Personal Paperclip workspace (review before installation)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=personal-workspace
+Group=personal-workspace
+WorkingDirectory=/opt/personal-workspace
+EnvironmentFile=/etc/personal-workspace/server.env
+Environment=PAPERCLIP_HOME=/var/lib/personal-workspace
+Environment=HOME=/var/lib/personal-workspace/home
+Environment=HOST=127.0.0.1
+Environment=PORT=4310
+Environment=PAPERCLIP_TELEMETRY_DISABLED=1
+Environment=DO_NOT_TRACK=1
+Environment=PI_TELEMETRY=0
+ExecStart=/opt/personal-workspace/tools/node/bin/node /opt/personal-workspace/server/dist/index.js
+Restart=on-failure
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=180
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+# No ReadOnlyPaths promise here: configure OS restrictions per worker capability.
+# Set authenticated/private in the Paperclip instance config before enabling.
+# Database, uploads, secrets and Pi sessions persist in /var/lib/personal-workspace.
+# Logs: journalctl -u personal-workspace; run logs also remain in Paperclip storage.
+
+[Install]
+WantedBy=multi-user.target

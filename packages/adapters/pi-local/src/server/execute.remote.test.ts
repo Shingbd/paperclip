@@ -115,6 +115,27 @@ describe("pi remote execution", () => {
     }
   });
 
+  it("enforces server-owned personal draft isolation even when agent config requests tools and an explicit extension", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "paperclip-personal-isolation-"));
+    cleanupDirs.push(root);
+    const meta = vi.fn();
+    await execute({
+      runId: "personal-isolation", agent: { id: "personal-agent", companyId: "personal-company", name: "Fixture", adapterType: "pi_local", adapterConfig: {} },
+      runtime: { sessionId: null, sessionParams: null, sessionDisplayId: null, taskKey: null },
+      config: { command: "pi", model: "openai/gpt-5.4-mini", extraArgs: ["--extension", "/untrusted/extension.ts", "--tools", "bash"] },
+      context: { personalTodoNoTools: true, paperclipWorkspace: { cwd: root, source: "project_primary" } },
+      executionTransport: { remoteExecution: { host: "127.0.0.1", port: 2222, username: "fixture", remoteWorkspacePath: "/remote/personal", remoteCwd: "/remote/personal", privateKey: "PRIVATE KEY", knownHosts: "[127.0.0.1]:2222 ssh-ed25519 AAAA", strictHostKeyChecking: true } },
+      onLog: async () => {}, onMeta: meta,
+    });
+    const args = meta.mock.calls.at(-1)?.[0].commandArgs as string[];
+    expect(args).toContain("--no-tools");
+    expect(args).toContain("--no-extensions");
+    expect(args).toContain("--no-context-files");
+    expect(args).not.toContain("--tools");
+    expect(args).not.toContain("--extension");
+    expect(args).not.toContain("--skill");
+  });
+
   it("prepares the workspace, syncs Pi skills, and restores workspace changes for remote SSH execution", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-pi-remote-"));
     cleanupDirs.push(rootDir);

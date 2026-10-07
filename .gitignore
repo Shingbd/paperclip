@@ -82,3 +82,7 @@ test-results/
 
 # Retained local lifecycle behavior measurements
 .lifecycle-baseline/
+
+# Isolated personal workspace state and project tool installation
+.personal-runtime/
+.personal-tools/

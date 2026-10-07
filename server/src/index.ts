@@ -1,4 +1,5 @@
 import { cloudWarmStandbyServerOptions } from "./middleware/cloud-warm-standby.js";
+import { personalWorkspaceService } from "./services/personal-workspace.js";
 import { createCloudWarmStandby } from "./services/cloud-warm-standby.js";
 import { subscribeAllCompanyLiveEvents } from "./services/live-events.js";
 import { chatCompletionDeliveryService } from "./services/chat-completion-delivery.js";
@@ -1644,6 +1645,11 @@ async function startServerWithDatabaseTeardown(
     };
     await runRetentionSweep();
 
+    const personalWorkspace = personalWorkspaceService(db, issue => queueIssueAssignmentWakeup({
+      heartbeat, issue, reason: "personal_todo_assigned", mutation: "personal_workspace_dispatch",
+      contextSource: "personal_workspace", requestedByActorType: "system", requestedByActorId: "personal-workspace", rethrowOnError: true,
+    }) ?? Promise.resolve());
+    let personalWorkspaceTickActive = false;
     startHeartbeatSchedulerInterval(() => {
       // Track the outer async callback as well as the work it starts. Shutdown
       // can then wait through an already-running suppression check before it
@@ -1665,6 +1671,12 @@ async function startServerWithDatabaseTeardown(
         }
 
         if (!(await heartbeat.resolveSchedulingSuppression()).suppressed) {
+          if (!personalWorkspaceTickActive) {
+            personalWorkspaceTickActive = true;
+            trackHeartbeatSchedulerWork(personalWorkspace.tick()
+              .catch(err => logger.error({ err }, "personal workspace check failed"))
+              .finally(() => { personalWorkspaceTickActive = false; }));
+          }
           trackHeartbeatSchedulerWork(heartbeat
             .tickTimers(new Date())
             .then((result) => {
