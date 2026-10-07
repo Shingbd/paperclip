@@ -456,3 +456,21 @@ test("direct protocol concurrency override only lowers the configured ceiling", 
     if (expected !== null) assert.equal(result.stdout, expected);
   }
 });
+
+for (const workflow of ["release.yml", "e2e.yml", "storybook-visual.yml", "runner-live-evals.yml"]) {
+  test(`${workflow} keeps its frozen dependency install and fails closed on stale locks`, () => {
+    const text = readWorkflow(workflow);
+    const job = workflow === "release.yml" ? text.split("  smoke_canary_onboarding:\n")[1].split("\n  # ----- Nightly lane")[0] : text;
+    const install = job.match(/(?:- name: Install (?:test )?dependencies\n\s+run: ([^\n]+)|- run: (pnpm install[^\n]*))/);
+    assert.ok(install, "source workflow must expose a dependency install step");
+    const script = install[1] ?? install[2];
+    for (const exitCode of [0, 17]) {
+      const run = spawnSync("bash", ["-euo", "pipefail", "-c", `
+        pnpm() { printf '%s\n' "$*"; return "$INSTALL_EXIT"; }
+        ${script}
+      `], { encoding: "utf8", env: { ...process.env, INSTALL_EXIT: String(exitCode) } });
+      assert.equal(run.status, exitCode, run.stderr);
+      assert.equal(run.stdout.trim(), "install --frozen-lockfile", "never resolve new packages or retry after a frozen install failure");
+    }
+  });
+}
